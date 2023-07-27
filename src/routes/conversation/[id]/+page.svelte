@@ -4,7 +4,9 @@
 	import { pendingMessageIdToRetry } from "$lib/stores/pendingMessageIdToRetry";
 	import { onMount } from "svelte";
 	import { page } from "$app/stores";
-	import { textGenerationStream, type Options } from "@huggingface/inference";
+	// import { textGenerationStream, type Options } from "@huggingface/inference";
+	// import { bamTextGenerationStream } from "./bamTextGenerationStream";
+	import { reactTextGenerationStream } from "./reactTextGenerationStream";
 	import { invalidate } from "$app/navigation";
 	import { base } from "$app/paths";
 	import { shareConversation } from "$lib/shareConversation";
@@ -22,6 +24,9 @@
 	let messages = data.messages;
 	let lastLoadedMessages = data.messages;
 	let isAborted = false;
+	let watsonx_access_token = data.watsonx_access_token;
+	let watsonx_inference_api_url = data.watsonx_inference_api_url;
+	let react_api_base_url = data.react_api_base_url;
 
 	let webSearchMessages: WebSearchMessage[] = [];
 
@@ -44,13 +49,55 @@
 		let conversationId = $page.params.id;
 		const responseId = randomUUID();
 
-		const response = textGenerationStream(
+		// hf
+		// const response = textGenerationStream(
+		// 	{
+		// 		model: $page.url.href,
+		// 		inputs,
+		// 		parameters: {
+		// 			...data.models.find((m) => m.id === data.model)?.parameters,
+		// 			return_full_text: false,
+		// 		},
+		// 	},
+		// 	{
+		// 		id: messageId,
+		// 		response_id: responseId,
+		// 		is_retry: isRetry,
+		// 		use_cache: false,
+		// 		web_search_id: webSearchId,
+		// 	} as Options
+		// );
+
+		// direct to BAM
+		// const bam_response = bamTextGenerationStream(
+		// 	{
+		// 		model: model?.id,
+		//      watsonx_inference_api_url: watsonx_inference_api_url,
+		// 		accessToken: watsonx_access_token,
+		// 		inputs,
+		// 		parameters: {
+		// 			...model?.parameters,
+		// 			return_full_text: false,
+		// 			instruction: model?.instruction,
+		// 		    examples: model?.examples,
+		// 			stop_sequences: model?.parameters?.stop,
+		// 		},
+		// 	},
+		// 	{
+		// 		id: messageId,
+		// 		response_id: responseId,
+		// 		is_retry: isRetry,
+		// 		use_cache: false,
+		// 		web_search_id: webSearchId,
+		// 	} as Options
+		// );
+
+		// direct to our React Langchain REST API
+		const response = reactTextGenerationStream(
 			{
-				model: $page.url.href,
 				inputs,
+				react_api_base_url,
 				parameters: {
-					...data.models.find((m) => m.id === data.model)?.parameters,
-					return_full_text: false,
 				},
 			},
 			{
@@ -62,12 +109,18 @@
 			} as Options
 		);
 
+		console.log("response=" + JSON.stringify(response))
+
 		for await (const output of response) {
 			pending = false;
+
+			console.log("output=" + JSON.stringify(output))
 
 			if (!output) {
 				break;
 			}
+
+			const lastMessage = messages[messages.length - 1];
 
 			if (conversationId !== $page.params.id) {
 				fetch(`${base}/conversation/${conversationId}/stop-generating`, {
@@ -85,30 +138,51 @@
 			}
 
 			// final message
-			if (output.generated_text) {
-				const lastMessage = messages[messages.length - 1];
 
-				if (lastMessage) {
-					lastMessage.content = output.generated_text;
-					lastMessage.webSearchId = webSearchId;
-					messages = [...messages];
-				}
-				break;
-			}
 
-			if (!output.token.special) {
-				const lastMessage = messages[messages.length - 1];
+			// hf
+			// if (output.generated_text) {
+			// 	const lastMessage = messages[messages.length - 1];
 
-				if (lastMessage?.from !== "assistant") {
-					// First token has a space at the beginning, trim it
-					messages = [
-						...messages,
-						// id doesn't match the backend id but it's not important for assistant messages
-						{ from: "assistant", content: output.token.text.trimStart(), id: responseId },
-					];
-				} else {
-					lastMessage.content += output.token.text;
-					messages = [...messages];
+			// 	if (lastMessage) {
+			// 		lastMessage.content = output.generated_text;
+			// 		lastMessage.webSearchId = webSearchId;
+			// 		messages = [...messages];
+			// 	}
+			// 	break;
+			// }
+
+			// if (!output.token.special) {
+			// 	const lastMessage = messages[messages.length - 1];
+
+			// 	if (lastMessage?.from !== "assistant") {
+			// 		// First token has a space at the beginning, trim it
+			// 		messages = [
+			// 			...messages,
+			// 			// id doesn't match the backend id but it's not important for assistant messages
+			// 			{ from: "assistant", content: output.token.text.trimStart(), id: responseId },
+			// 		];
+			// 	} else {
+			// 		lastMessage.content += output.token.text;
+			// 		messages = [...messages];
+			// 	}
+			// }
+
+			// react handling
+			for (const result of output.results) {
+				if (result.generated_text) {
+					if (lastMessage?.from !== "assistant") {
+						// First token has a space at the beginning, trim it
+						messages = [
+							...messages,
+							// id doesn't match the backend id but it's not important for assistant messages
+							{ from: "assistant", content: result.generated_text, id: responseId },
+						];
+					} else {
+						// lastMessage.content += result.generated_text + "\n\n";
+						lastMessage.content += result.generated_text;
+						messages = [...messages];
+					}
 				}
 			}
 		}

@@ -4,6 +4,8 @@ import { error } from "@sveltejs/kit";
 import { authCondition } from "$lib/server/auth";
 import type { WebSearchMessageResult } from "$lib/types/WebSearch";
 import { UrlDependency } from "$lib/types/UrlDependency";
+import { models } from "$lib/server/models";
+import { WATSONX_ACCESS_TOKEN, WATSONX_INFERENCE_API_BASE_URL, REACT_API_BASE_URL } from "$env/static/private";
 
 export const load = async ({ params, depends, locals }) => {
 	// todo: add validation on params.id
@@ -30,6 +32,11 @@ export const load = async ({ params, depends, locals }) => {
 		throw error(404, "Conversation not found.");
 	}
 
+	console.log("conversation.model=" + JSON.stringify(conversation.model))
+	console.log("models=" + JSON.stringify(models))
+	const model = models.find((m) => m.id === conversation.model)
+	console.log("model=" + JSON.stringify(model))
+
 	const webSearchesId = conversation.messages
 		.filter((message) => message.webSearchId)
 		.map((message) => new ObjectId(message.webSearchId));
@@ -47,6 +54,11 @@ export const load = async ({ params, depends, locals }) => {
 		messages: conversation.messages,
 		title: conversation.title,
 		model: conversation.model,
+		instruction: model?.instruction,
+		examples: model?.examples,
+		watsonx_access_token: WATSONX_ACCESS_TOKEN,
+		watsonx_inference_api_url: WATSONX_INFERENCE_API_BASE_URL,
+		react_api_base_url: REACT_API_BASE_URL,
 		searches,
 	};
 };

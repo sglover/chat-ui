@@ -7,23 +7,33 @@ const modelsRaw = z
 			/** Used as an identifier in DB */
 			id: z.string().optional(),
 			/** Used to link to the model page, and for inference */
+			vendor: z.string().min(1),
 			name: z.string().min(1),
 			displayName: z.string().min(1).optional(),
 			description: z.string().min(1).optional(),
+			instruction: z.string().min(1).optional(),
+			examples: z
+				.array(
+					z.object({
+						input: z.string().min(0),
+						output: z.string().min(0),
+					})
+				)
+				.optional(),
 			websiteUrl: z.string().url().optional(),
 			modelUrl: z.string().url().optional(),
 			datasetName: z.string().min(1).optional(),
 			datasetUrl: z.string().url().optional(),
-			userMessageToken: z.string().min(1),
-			assistantMessageToken: z.string().min(1),
+			userMessageToken: z.string().min(1).optional(),
+			assistantMessageToken: z.string().min(1).optional(),
 			messageEndToken: z.string().min(1).optional(),
 			preprompt: z.string().default(""),
 			prepromptUrl: z.string().url().optional(),
 			promptExamples: z
 				.array(
 					z.object({
-						title: z.string().min(1),
-						prompt: z.string().min(1),
+						title: z.string().min(0),
+						prompt: z.string().min(0),
 					})
 				)
 				.optional(),
@@ -42,6 +52,9 @@ const modelsRaw = z
 					truncate: z.number().int().positive(),
 					max_new_tokens: z.number().int().positive(),
 					stop: z.array(z.string()).optional(),
+					top_p: z.number().positive(),
+					repetition_penalty: z.number().positive().optional(),
+					top_k: z.number().int().positive().optional(),
 				})
 				.passthrough()
 				.optional(),

@@ -16,6 +16,8 @@ app_port: 3000
 
 A chat interface using open source models, eg OpenAssistant. It is a SvelteKit app and it powers the [HuggingChat app on hf.co/chat](https://huggingface.co/chat).
 
+This has been adapted for use for various Watsonx use cases. See [here](./docs/README-watsonx.md).
+
 0. [No Setup Deploy](#no-setup-deploy)
 1. [Setup](#setup)
 2. [Launch](#launch)
