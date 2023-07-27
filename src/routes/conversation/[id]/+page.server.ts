@@ -51,6 +51,7 @@ export const load = async ({ params, depends, locals }) => {
 	);
 
 	return {
+		conversation_id: conversation._id.toString(),
 		messages: conversation.messages,
 		title: conversation.title,
 		model: conversation.model,

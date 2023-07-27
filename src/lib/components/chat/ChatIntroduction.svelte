@@ -41,7 +41,7 @@
 				</div>
 			</div>
 			<p class="text-base text-gray-600 dark:text-gray-400">
-				v{PUBLIC_APP_DESCRIPTION}
+				{PUBLIC_APP_DESCRIPTION}
 			</p>
 		</div>
 	</div>

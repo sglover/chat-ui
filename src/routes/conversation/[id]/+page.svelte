@@ -21,6 +21,7 @@
 
 	export let data;
 
+	let conversation_id = data.conversation_id;
 	let messages = data.messages;
 	let lastLoadedMessages = data.messages;
 	let isAborted = false;
@@ -97,6 +98,7 @@
 			{
 				inputs,
 				react_api_base_url,
+				conversation_id: conversation_id,
 				parameters: {
 				},
 			},

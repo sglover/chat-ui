@@ -8,6 +8,7 @@ export type TextGenerationArgs = {
 	 * A string to be generated from
 	 */
 	inputs: string;
+	conversation_id: string;
 	react_api_base_url: string;
 	parameters?: {
 	};
@@ -125,6 +126,7 @@ export async function makeRequestOptions(
 		headers,
 		method: "POST",
 		body: JSON.stringify({
+			conversation_id: args.conversation_id,
 			input: args.inputs
 		})
 	};
