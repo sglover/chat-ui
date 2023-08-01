@@ -88,7 +88,7 @@
 		>
 			<div class="flex w-full flex-1 border-none bg-transparent">
 				<ChatInput
-					placeholder="Ask anything"
+					placeholder="What service do you want to order?"
 					bind:value={message}
 					on:submit={handleSubmit}
 					on:keypress={() => {
